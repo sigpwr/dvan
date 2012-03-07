@@ -52,6 +52,28 @@ size_t dvan_buffer_available(dvan_buffer_t* db) {
     return (db)?(db->buf_len - db->data_len):-EINVAL; 
 }
 
+size_t dvan_buffer_size(dvan_buffer_t* db){
+    return (db)?(db->data_len):-EINVAL; 
+}
+
+size_t dvan_buffer_copy(dvan_buffer_t* db, void* targ, size_t len){
+    if (!db) return -EINVAL;
+    if (!targ) return -EINVAL;
+    if (len > db->data_len) len = db->data_len;
+
+    memcpy(targ, db->buffer, len);
+
+    return len; 
+}
+
+size_t dvan_buffer_consume(dvan_buffer_t* db, size_t len){
+    if (!db) return -EINVAL;
+    if (len > db->data_len) len = db->data_len;
+    memmove(db->buffer, db->buffer + len, db->data_len - len);
+    db->data_len -= len;
+    return len; 
+}
+
 int dvan_buffer_isempty(dvan_buffer_t* db){
     return (db)?(db->data_len == 0):-EINVAL;
 }
@@ -86,9 +108,7 @@ int dvan_buffer_to_socket(dvan_buffer_t* db, int sk){
     if (bytes_written <= 0)
         return bytes_written;
     
-    memmove(db->buffer, db->buffer + bytes_written, db->data_len - bytes_written);
-    db->data_len -= bytes_written;
-
+    dvan_buffer_consume(db, bytes_written);
     return bytes_written;
 }
 
