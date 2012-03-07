@@ -18,7 +18,7 @@ dvan_message_t* dvan_message_create(){
     return x;
 }
 
-dvan_message_t* dvan_message_create_from_string(char* s){
+dvan_message_t* dvan_message_from_string(char* s){
     dvan_message_t* x;
     if (!s) return NULL;
 
@@ -35,6 +35,35 @@ dvan_message_t* dvan_message_create_from_string(char* s){
     strncpy(x->data, s, x->length);
     x->type = DVAN_MESSAGE_STRING;
     return x;
+}
+
+dvan_message_t* dvan_message_from_buffer(dvan_buffer_t* b){
+    dvan_message_t* x;
+    if (!b) return NULL;
+
+    x = dvan_message_create();
+    if (!x) return NULL;
+
+//TODO: Add code to parse packet from the buffer here
+
+    x->type = DVAN_MESSAGE_STRING;
+    return x;
+}
+
+int dvan_message_to_buffer(dvan_message_t* m, dvan_buffer_t* b){
+
+//TODO: Add code to turn message into packet
+
+    return 0;
+}
+
+int dvan_message_to_string(dvan_message_t* m, char* s, uint64_t len){
+    if ((!m) || (!s)) return -EINVAL;
+
+    if (m->length > len) return -ENOMEM;
+
+    strncpy(s, m->data, m->length);
+    return m->length;
 }
 
 int dvan_message_destroy(dvan_message_t* x){

@@ -25,6 +25,9 @@ typedef struct dvan_message {
     uint64_t length; 
     void* data;
 
+//TODO: Add source and destination
+//TODO: Figure out what source and destination types should look like
+
     //Set by server
     time_t expiry;
     dvan_server_client_t* src;
