@@ -1,5 +1,5 @@
 CC ?= gcc
-OBJFILES := dvand_main.o dvan_server.o event_loop.o utils.o list.o dvan_server_client.o dvan_buffer.o
+OBJFILES := dvand_main.o dvan_server.o event_loop.o utils.o list.o dvan_server_client.o dvan_buffer.o dvan_message.o
 CFLAGS+=-g -Wall -Werror -DDVAN_DEBUG
 LDFLAGS+=
 
