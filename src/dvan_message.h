@@ -38,6 +38,7 @@ dvan_message_t* dvan_message_create();
 dvan_message_t* dvan_message_from_buffer(dvan_buffer_t* b);
 dvan_message_t* dvan_message_from_string(char* s);
 
+int dvan_message_dump(dvan_message_t* m);
 int dvan_message_to_buffer(dvan_message_t* m, dvan_buffer_t* b);
 int dvan_message_to_string(dvan_message_t* m, char* s, uint64_t len);
 

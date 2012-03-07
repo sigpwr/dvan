@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 #include "dvan_message.h"
 
 dvan_message_t* dvan_message_create(){
@@ -54,6 +55,12 @@ int dvan_message_to_buffer(dvan_message_t* m, dvan_buffer_t* b){
 
 //TODO: Add code to turn message into packet
 
+    return 0;
+}
+
+int dvan_message_dump(dvan_message_t* m){
+    if (!m) return -EINVAL;
+    printf("MESSAGE: %s\n", (char*)m->data);
     return 0;
 }
 

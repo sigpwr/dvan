@@ -17,6 +17,7 @@ typedef struct dvan_server_client_private {
     dvan_buffer_t *in;
     dvan_buffer_t *out;
     dvan_server_t *di;
+    struct list messages;
 } dvan_server_client_t;
 
 int dvan_server_client_add(dvan_server_t*, int);
