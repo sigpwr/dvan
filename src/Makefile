@@ -1,17 +1,23 @@
 CC ?= gcc
-OBJFILES := dvand_main.o dvan_server.o event_loop.o utils.o list.o dvan_server_client.o dvan_buffer.o dvan_message.o
+
 CFLAGS+=-g -Wall -Werror -DDVAN_DEBUG
 LDFLAGS+=
 
-dvand: $(OBJFILES)
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(OBJFILES)
+DVAND_SOURCES := dvand_main.o dvan_server.o event_loop.o utils.o list.o dvan_server_client.o dvan_buffer.o dvan_message.o
 
+DVAN_CLIENT_SOURCES := utils.o list.o dvan_buffer.o dvan_message.o dvan_client_main.o
 
-%.o: %.cpp
-	$(CC) $(CFLAGS) -o $@ $<
+all: dvand dvan_client
+
+dvand: $(DVAND_SOURCES)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^
+
+dvan_client: $(DVAN_CLIENT_SOURCES)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^
+
+%.o: %.c
+	$(CC) $(CFLAGS) -c -o $@ $^
 
 clean:
-	rm -f $(OBJFILES) list_test dvand
+	rm -f *.o dvan_client dvand
 
-
-list_test: list_test.c list.c

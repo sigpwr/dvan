@@ -15,7 +15,9 @@
 #include "list.h"
 
 int dvan_server_socket_callback(int sk, int flags, void* cb){
+    static uint64_t last_client = 0;
     dvan_server_t* di;
+    dvan_server_client_t* dc;
     int client_sk;
     struct sockaddr_in6 sa;
     socklen_t sl;
@@ -26,7 +28,10 @@ int dvan_server_socket_callback(int sk, int flags, void* cb){
         sl = sizeof(sa);
         client_sk = accept(sk, (struct sockaddr*)&sa, &sl); 
         printf("accepted socket %d\n", client_sk);
-        dvan_server_client_add(di, client_sk);
+        dc = dvan_server_client_create(di, client_sk);
+        if (dc){
+            dvan_server_client_setid(dc, last_client++);
+        }
     } else if (flags & EL_TIMER) {
         printf("DVAN Server alive\n");
         el_settimer(di->el, sk, 10);
@@ -71,7 +76,7 @@ int dvan_server_destroy(dvan_server_t* di){
     dvan_server_socket_destroy(di);
 
     list_foreach_entry_safe(x, y, &di->clients, peers){
-        dvan_server_client_delete(x);
+        dvan_server_client_destroy(x);
     }
 
     if (di->el){

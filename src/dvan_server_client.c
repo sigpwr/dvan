@@ -7,7 +7,7 @@
 #include "dvan_message.h"
 #include "dvan_server.h"
 
-int dvan_server_client_add(dvan_server_t* di, int fd){
+dvan_server_client_t* dvan_server_client_create(dvan_server_t* di, int fd){
     int rc;
     dvan_server_client_t* client;
 
@@ -23,20 +23,26 @@ int dvan_server_client_add(dvan_server_t* di, int fd){
     rc=el_addfd(di->el, fd);
     if (rc){
         dvan_free(client);
-        return rc;
+        return NULL;
     }
     rc = el_setcb(di->el, fd, dvan_server_client_callback, client);
     if (rc){
         el_rmfd(di->el, fd);
         dvan_free(client);
-        return rc;
+        return NULL;
     }
-    rc=el_setflags(di->el, fd, EL_READ);
+    el_setflags(di->el, fd, EL_READ);
 
+    return client;
+}
+
+int dvan_server_client_setid(dvan_server_client_t* tmp, uint64_t id){
+    if (!tmp) return -EINVAL;
+    tmp->app_id = id;
     return 0;
 }
 
-int dvan_server_client_delete(dvan_server_client_t *tmp){
+int dvan_server_client_destroy(dvan_server_client_t *tmp){
     dvan_message_t *x, *t;
     printf("Deleting client\n");
     el_rmfd(tmp->di->el, tmp->socket);
@@ -62,18 +68,19 @@ int dvan_server_client_callback(int fd, int flags, void* cbd){
     if (flags & EL_READ){
         bytes = dvan_buffer_from_socket(client->in, fd);
         if (bytes <= 0){
-            dvan_server_client_delete(client);
+            dvan_server_client_destroy(client);
             return 0;
         }
         m = dvan_message_from_buffer(client->in);
         if (m){
+            m->src_app = client->app_id;
             list_add(&client->messages, &m->peers);
-            printf("We've got a message!\n");
         }
-    } else if (flags & EL_WRITE) {
+    } 
+    if (flags & EL_WRITE) {
         bytes = dvan_buffer_to_socket(client->out, fd);
         if (bytes <= 0){
-            dvan_server_client_delete(client);
+            dvan_server_client_destroy(client);
             return 0;
         }
     }

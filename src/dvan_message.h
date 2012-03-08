@@ -16,6 +16,8 @@ struct dvan_message_header {
     uint8_t version;
     uint8_t type;
     uint64_t length;
+    uint64_t src_app;
+    uint64_t dst_app;
 
 } __attribute__((packed));
 
@@ -23,6 +25,8 @@ typedef struct dvan_message {
     //Set on creation
     uint8_t type;
     uint64_t length; 
+    uint64_t src_app;
+    uint64_t dst_app;
     void* data;
 
 //TODO: Add source and destination
