@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include "dvan_param.h"
 #include "dvan_message.h"
 
 dvan_message_t* dvan_message_create(){
@@ -8,9 +9,11 @@ dvan_message_t* dvan_message_create(){
     x = malloc(sizeof(dvan_message_t));
     if (!x) return NULL;
 
-    x->type = 0;
-    x->length = 0;
-    x->data = NULL;
+    x->source_node = NULL;
+    x->dest_node = NULL;
+    x->error_code = 0;
+
+    list_init(&x->params);
 
     x->expiry = 0;
     x->src = NULL;
@@ -26,15 +29,8 @@ dvan_message_t* dvan_message_from_string(char* s){
     x = dvan_message_create();
     if (!x) return NULL;
 
-    x->length = strlen(s) + 1;
-    x->data = malloc(x->length);
-    if (!x->data){
-        dvan_message_destroy(x);
-        return NULL;
-    }
-
-    strncpy(x->data, s, x->length);
     x->type = DVAN_MESSAGE_STRING;
+
     return x;
 }
 
@@ -51,6 +47,24 @@ dvan_message_t* dvan_message_from_buffer(dvan_buffer_t* b){
     return x;
 }
 
+int dvan_message_add_string(dvan_message_t* x, char* k, char* v){
+    dvan_param_t* dp;
+    if (!x || !k || !v) return -EINVAL;
+    dp = dvan_param_create_string(k,v);
+    if (!dp) return -ENOMEM;
+    list_add(&x->params,&dp->peers);
+    return 0;
+}
+
+int dvan_message_add_integer(dvan_message_t* x, char* k, int v){
+    dvan_param_t* dp;
+    if (!x || !k || !v) return -EINVAL;
+    dp = dvan_param_create_integer(k,v);
+    if (!dp) return -ENOMEM;
+    list_add(&x->params,&dp->peers);
+    return 0;
+}
+
 int dvan_message_to_buffer(dvan_message_t* m, dvan_buffer_t* b){
 
 //TODO: Add code to turn message into packet
@@ -59,26 +73,29 @@ int dvan_message_to_buffer(dvan_message_t* m, dvan_buffer_t* b){
 }
 
 int dvan_message_dump(dvan_message_t* m){
+    dvan_param_t* p;
     if (!m) return -EINVAL;
-    printf("MESSAGE: %s\n", (char*)m->data);
+    printf("MESSAGE: type %d\n", m->type);
+    list_foreach_entry(p, &m->params, peers){
+        dvan_param_dump(p);
+    }
     return 0;
 }
 
 int dvan_message_to_string(dvan_message_t* m, char* s, uint64_t len){
     if ((!m) || (!s)) return -EINVAL;
 
-    if (m->length > len) return -ENOMEM;
-
-    strncpy(s, m->data, m->length);
-    return m->length;
+//TODO: Fix message_to_string
+    return 0;
 }
 
 int dvan_message_destroy(dvan_message_t* x){
     if (!x) return -EINVAL;
 
+//TODO: Free data correctly
+
     list_delete(&x->peers);
 
-    if (x->data) free(x->data);
     free(x);
 
     return 0;

@@ -24,13 +24,11 @@ struct dvan_message_header {
 typedef struct dvan_message {
     //Set on creation
     uint8_t type;
-    uint64_t length; 
-    uint64_t src_app;
-    uint64_t dst_app;
-    void* data;
+    char* source_node;
+    char* dest_node;
+    int32_t error_code;
 
-//TODO: Add source and destination
-//TODO: Figure out what source and destination types should look like
+    list_t params;
 
     //Set by server
     time_t expiry;
@@ -41,6 +39,9 @@ typedef struct dvan_message {
 dvan_message_t* dvan_message_create();
 dvan_message_t* dvan_message_from_buffer(dvan_buffer_t* b);
 dvan_message_t* dvan_message_from_string(char* s);
+
+int dvan_message_add_string(dvan_message_t*, char* k, char* v);
+int dvan_message_add_integer(dvan_message_t*, char* k, int v);
 
 int dvan_message_dump(dvan_message_t* m);
 int dvan_message_to_buffer(dvan_message_t* m, dvan_buffer_t* b);

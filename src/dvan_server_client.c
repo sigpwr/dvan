@@ -73,7 +73,7 @@ int dvan_server_client_callback(int fd, int flags, void* cbd){
         }
         m = dvan_message_from_buffer(client->in);
         if (m){
-            m->src_app = client->app_id;
+//            m->src_app = client->app_id;
             list_add(&client->messages, &m->peers);
         }
     } 
