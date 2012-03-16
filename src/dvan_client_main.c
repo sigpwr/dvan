@@ -67,7 +67,7 @@ int main(int argc, char** argv){
     rc = dvan_message_to_buffer(msg, out); 
     if (rc) printf("Message to buffer fail\n");
     rc = dvan_buffer_to_socket(out, sk); 
-    if (rc) printf("buffer to socket fail\n");
+    if (rc<0) printf("buffer to socket fail (%d)\n", rc);
 
     close(sk);
 

@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <arpa/inet.h>
 #include "dvan_param.h"
 #include "dvan_message.h"
 
@@ -66,8 +67,39 @@ int dvan_message_add_integer(dvan_message_t* x, char* k, int v){
 }
 
 int dvan_message_to_buffer(dvan_message_t* m, dvan_buffer_t* b){
+    uint8_t version = 0;
+    uint16_t tmp_len, tmp_len_n;
+    dvan_param_t* p;
+    if (!m || !b) return -EINVAL;
+    dvan_buffer_add(b, &version, 1);
+    dvan_buffer_add(b, &m->type, 1);
 
-//TODO: Add code to turn message into packet
+    if (m->source_node)
+        tmp_len = strlen(m->source_node);
+    else
+        tmp_len = 0;
+    tmp_len_n = htons(tmp_len);
+    dvan_buffer_add(b, &tmp_len_n, sizeof(tmp_len_n));
+    dvan_buffer_add(b, m->source_node, tmp_len);
+
+    if (m->dest_node)
+        tmp_len = strlen(m->dest_node);
+    else
+        tmp_len = 0;
+    tmp_len_n = htons(tmp_len);
+    dvan_buffer_add(b, &tmp_len_n, sizeof(tmp_len_n));
+    dvan_buffer_add(b, m->dest_node, tmp_len);
+    
+    tmp_len = 0;
+    list_foreach_entry(p, &m->params, peers){
+        tmp_len++;
+    } 
+    tmp_len_n = htons(tmp_len);
+    dvan_buffer_add(b, &tmp_len_n, sizeof(tmp_len_n));
+
+    list_foreach_entry(p, &m->params, peers){
+        dvan_param_to_buffer(p, b);
+    } 
 
     return 0;
 }

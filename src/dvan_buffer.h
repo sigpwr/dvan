@@ -21,7 +21,7 @@ size_t dvan_buffer_size(dvan_buffer_t* db);
 size_t dvan_buffer_copy(dvan_buffer_t* db, void* targ, size_t len);
 size_t dvan_buffer_consume(dvan_buffer_t* db, size_t len);
 
-int dvan_buffer_append(dvan_buffer_t* db, void* src, size_t len);
+int dvan_buffer_add(dvan_buffer_t* db, void* src, size_t len);
 
 int dvan_buffer_isempty(dvan_buffer_t* db);
 int dvan_buffer_from_socket(dvan_buffer_t* db, int sk);

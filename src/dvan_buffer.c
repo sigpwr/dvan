@@ -78,6 +78,25 @@ int dvan_buffer_isempty(dvan_buffer_t* db){
     return (db)?(db->data_len == 0):-EINVAL;
 }
 
+int dvan_buffer_add(dvan_buffer_t* db, void* src, size_t len){
+    int rc;
+    if (!db || !src)
+        return -EINVAL;
+
+    if (len == 0)
+        return 0;
+
+    while (len > dvan_buffer_available(db)){
+        rc = dvan_buffer_extend(db); 
+        if (rc != 0)
+            return rc;
+    }
+    
+    memcpy(db->buffer + db->data_len, src, len); 
+    db->data_len += len;
+    return rc;
+}
+
 int dvan_buffer_from_socket(dvan_buffer_t* db, int sk){
     size_t avail;
     size_t bytes_read;

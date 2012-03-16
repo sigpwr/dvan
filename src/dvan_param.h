@@ -2,6 +2,7 @@
 #define _DVAN_PARAM_H
 #include <stdint.h>
 #include "list.h"
+#include "dvan_buffer.h"
 
 enum {
     DVAN_PARAM_STRING,
@@ -23,6 +24,7 @@ dvan_param_t* dvan_param_create_string(char*, char*);
 dvan_param_t* dvan_param_create_integer(char*, int);
 
 void dvan_param_dump(dvan_param_t*);
+int dvan_param_to_buffer(dvan_param_t*, dvan_buffer_t*);
 void dvan_param_destroy(dvan_param_t*);
 
 #endif

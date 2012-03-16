@@ -3,6 +3,7 @@
 #include <errno.h>
 #include <string.h>
 #include <stdio.h>
+#include <arpa/inet.h>
 #include "dvan_param.h"
 
 dvan_param_t* dvan_param_create(char* key){
@@ -73,6 +74,21 @@ dvan_param_t* dvan_param_create_integer(char* key, int value){
     x->length = value_len;
     x->type = DVAN_PARAM_INTEGER;
     return x;
+}
+
+int dvan_param_to_buffer(dvan_param_t* p, dvan_buffer_t* b){
+    uint32_t tmp;
+    int rc;
+    if (!p || !b) return -EINVAL;
+    tmp = htonl(p->type);
+    rc = dvan_buffer_add(b, &tmp, sizeof(tmp));
+    tmp = htonl(strlen(p->key));
+    rc = dvan_buffer_add(b, &tmp, sizeof(tmp));
+    rc = dvan_buffer_add(b, p->key, strlen(p->key));
+    tmp = htonl(p->length);
+    rc = dvan_buffer_add(b, &tmp, sizeof(tmp));
+    rc = dvan_buffer_add(b, p->value, p->length);
+    return 0;
 }
 
 void dvan_param_dump(dvan_param_t* x){

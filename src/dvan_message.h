@@ -12,6 +12,18 @@ enum {
     DVAN_MESSAGE_NOTIFICATION
 };
 
+/* Protocol version 0
+ *
+ * 8 bits - version
+ * 8 bits - message type
+ * 16 bits - source node length
+ * X bytes - source node
+ * 16 bits - dest node length
+ * X bytes - dest node
+ * 16 bits - number of parameters
+ * X * sizeof(param) bytes - params
+ */
+
 struct dvan_message_header {
     uint8_t version;
     uint8_t type;
