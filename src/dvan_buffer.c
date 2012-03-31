@@ -2,6 +2,8 @@
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
+#include <arpa/inet.h>
+#include <stdio.h>
 #include "dvan_buffer.h"
 #include "utils.h"
 
@@ -15,6 +17,7 @@ dvan_buffer_t *dvan_buffer_create(){
 
     b->buf_len = DVAN_BUFFER_DEFAULT;
     b->data_len = 0;
+    b->data_off = 0;
     return b;
 
 dvan_buffer_malloc_out:
@@ -52,39 +55,37 @@ size_t dvan_buffer_available(dvan_buffer_t* db) {
     return (db)?(db->buf_len - db->data_len):-EINVAL; 
 }
 
-size_t dvan_buffer_size(dvan_buffer_t* db){
-    return (db)?(db->data_len):-EINVAL; 
+int dvan_buffer_add_uint8(dvan_buffer_t* db, uint8_t x, int version){
+    return dvan_buffer_add(db, &x, sizeof(x));
 }
-
-size_t dvan_buffer_copy(dvan_buffer_t* db, void* targ, size_t len){
-    if (!db) return -EINVAL;
-    if (!targ) return -EINVAL;
-    if (len > db->data_len) len = db->data_len;
-
-    memcpy(targ, db->buffer, len);
-
-    return len; 
+int dvan_buffer_add_uint32(dvan_buffer_t* db, uint32_t x, int version){
+    x = htonl(x);
+    return dvan_buffer_add(db, &x, sizeof(x));
 }
-
-size_t dvan_buffer_consume(dvan_buffer_t* db, size_t len){
-    if (!db) return -EINVAL;
-    if (len > db->data_len) len = db->data_len;
-    memmove(db->buffer, db->buffer + len, db->data_len - len);
-    db->data_len -= len;
-    return len; 
+int dvan_buffer_add_int32(dvan_buffer_t* db, int32_t x, int version){
+    x = htonl(x);
+    return dvan_buffer_add(db, &x, sizeof(x));
 }
-
-int dvan_buffer_isempty(dvan_buffer_t* db){
-    return (db)?(db->data_len == 0):-EINVAL;
+int dvan_buffer_add_string(dvan_buffer_t* db, char* x, int version){
+    int rc;
+    uint32_t s;
+    if (!x) {
+        s=0;
+    } else {
+        s=strlen(x);
+    }
+    rc = dvan_buffer_add_uint32(db, s, version);
+    if (rc) return rc;
+    return dvan_buffer_add(db, x, s);
 }
 
 int dvan_buffer_add(dvan_buffer_t* db, void* src, size_t len){
     int rc;
-    if (!db || !src)
-        return -EINVAL;
 
     if (len == 0)
         return 0;
+    if (!db || !src)
+        return -EINVAL;
 
     while (len > dvan_buffer_available(db)){
         rc = dvan_buffer_extend(db); 
@@ -96,6 +97,78 @@ int dvan_buffer_add(dvan_buffer_t* db, void* src, size_t len){
     db->data_len += len;
     return rc;
 }
+
+int dvan_buffer_consume_uint8(dvan_buffer_t* db, uint8_t* dst, int version){
+    void* tmp;
+    tmp = dvan_buffer_consume(db, sizeof(*dst));
+    if (!tmp) return -ENOMEM;
+    *dst = *((uint8_t*)tmp);
+    return 0;
+}
+
+int dvan_buffer_consume_uint32(dvan_buffer_t* db, uint32_t* dst, int version){
+    void* tmp;
+    tmp = dvan_buffer_consume(db, sizeof(*dst));
+    if (!tmp) return -ENOMEM;
+    *dst = ntohl(*((uint32_t*)tmp));
+    return 0;
+}
+
+int dvan_buffer_consume_int32(dvan_buffer_t* db, int32_t* dst, int version){
+    void* tmp;
+    tmp = dvan_buffer_consume(db, sizeof(*dst));
+    if (!tmp) return -ENOMEM;
+    *dst = ntohl(*((int32_t*)tmp));
+    return 0;
+}
+
+int dvan_buffer_consume_string(dvan_buffer_t* db, char** dst, int version){
+    void* tmp;
+    uint32_t len;
+    int rc;
+    if (!dst) return -EINVAL;
+    rc = dvan_buffer_consume_uint32(db, &len, version);
+    if (rc) return rc;
+    if (len == 0){
+        *dst = NULL;
+        return 0;
+    }
+    tmp = dvan_buffer_consume(db, len);
+    if (!tmp) return -ENOMEM;
+    *dst = malloc(len * sizeof(char) +1);
+    if (!*dst) return -ENOMEM;
+    memcpy(*dst, tmp, len); 
+    (*dst)[len] = '\0';
+    return 0;    
+}
+
+void* dvan_buffer_consume(dvan_buffer_t* db, size_t len){
+    void* rv;
+    if (!db) return NULL;
+    if (len <= 0) return NULL;
+    if ((db->data_off + len) > db->data_len) return NULL;
+    rv = db->buffer + db->data_off;
+    db->data_off += len;
+    return rv;
+}
+
+void dvan_buffer_consume_reset(dvan_buffer_t* db){
+    if (!db) return;
+    db->data_off = 0;
+}
+
+int dvan_buffer_consume_finalize(dvan_buffer_t* db){
+    if (!db) return -EINVAL;
+    if (db->data_off > db->data_len) return -EINVAL;
+    memmove(db->buffer, db->buffer + db->data_off, db->data_len - db->data_len);
+    db->data_len -= db->data_off;
+    return 0; 
+}
+
+int dvan_buffer_isempty(dvan_buffer_t* db){
+    return (db)?(db->data_len == 0):-EINVAL;
+}
+
 
 int dvan_buffer_from_socket(dvan_buffer_t* db, int sk){
     size_t avail;
@@ -128,6 +201,7 @@ int dvan_buffer_to_socket(dvan_buffer_t* db, int sk){
         return bytes_written;
     
     dvan_buffer_consume(db, bytes_written);
+    dvan_buffer_consume_finalize(db);
     return bytes_written;
 }
 

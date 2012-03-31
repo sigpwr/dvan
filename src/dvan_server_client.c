@@ -76,6 +76,7 @@ int dvan_server_client_callback(int fd, int flags, void* cbd){
 //            m->src_app = client->app_id;
             list_add(&client->messages, &m->peers);
         }
+        printf("message_from_buffer returned %p\n", m);
     } 
     if (flags & EL_WRITE) {
         bytes = dvan_buffer_to_socket(client->out, fd);

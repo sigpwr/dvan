@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <assert.h>
 #include <arpa/inet.h>
 #include "dvan_param.h"
 #include "dvan_message.h"
@@ -36,16 +37,42 @@ dvan_message_t* dvan_message_from_string(char* s){
 }
 
 dvan_message_t* dvan_message_from_buffer(dvan_buffer_t* b){
+    uint8_t version;
+    uint32_t num_params;
+    uint32_t i;
+    int rc;
     dvan_message_t* x;
+    dvan_param_t* p;
+
     if (!b) return NULL;
 
     x = dvan_message_create();
     if (!x) return NULL;
+    rc = dvan_buffer_consume_uint8(b, &version, 0); 
+    if (rc) goto dvan_message_from_buffer_out;
+    rc = dvan_buffer_consume_uint8(b, &x->type, version); 
+    if (rc) goto dvan_message_from_buffer_out;
+    rc = dvan_buffer_consume_string(b, &x->source_node, version); 
+    if (rc) goto dvan_message_from_buffer_out;
+    rc = dvan_buffer_consume_string(b, &x->dest_node, version); 
+    if (rc) goto dvan_message_from_buffer_out;
+    rc = dvan_buffer_consume_int32(b, &x->error_code, version); 
+    if (rc) goto dvan_message_from_buffer_out;
+    rc = dvan_buffer_consume_uint32(b, &num_params, version); 
+    if (rc) goto dvan_message_from_buffer_out;
+    /* Source node name */
 
-//TODO: Add code to parse packet from the buffer here
-
-    x->type = DVAN_MESSAGE_STRING;
+    for (i=0; i<num_params; i++){
+        p = dvan_param_from_buffer(b, version); 
+        if (!p) goto dvan_message_from_buffer_out;
+        list_add(&x->params, &p->peers);
+    }
     return x;
+
+dvan_message_from_buffer_out:
+    dvan_message_destroy(x);
+    dvan_buffer_consume_reset(b);
+    return NULL;
 }
 
 int dvan_message_add_string(dvan_message_t* x, char* k, char* v){
@@ -68,39 +95,21 @@ int dvan_message_add_integer(dvan_message_t* x, char* k, int v){
 
 int dvan_message_to_buffer(dvan_message_t* m, dvan_buffer_t* b){
     uint8_t version = 0;
-    uint16_t tmp_len, tmp_len_n;
+    uint32_t tmp_len = 0;
     dvan_param_t* p;
     if (!m || !b) return -EINVAL;
-    dvan_buffer_add(b, &version, 1);
-    dvan_buffer_add(b, &m->type, 1);
-
-    if (m->source_node)
-        tmp_len = strlen(m->source_node);
-    else
-        tmp_len = 0;
-    tmp_len_n = htons(tmp_len);
-    dvan_buffer_add(b, &tmp_len_n, sizeof(tmp_len_n));
-    dvan_buffer_add(b, m->source_node, tmp_len);
-
-    if (m->dest_node)
-        tmp_len = strlen(m->dest_node);
-    else
-        tmp_len = 0;
-    tmp_len_n = htons(tmp_len);
-    dvan_buffer_add(b, &tmp_len_n, sizeof(tmp_len_n));
-    dvan_buffer_add(b, m->dest_node, tmp_len);
-    
-    tmp_len = 0;
+    dvan_buffer_add_uint8(b, version, version);
+    dvan_buffer_add_uint8(b, m->type, version);
+    dvan_buffer_add_string(b, m->source_node, version);
+    dvan_buffer_add_string(b, m->dest_node, version);
+    dvan_buffer_add_int32(b, m->error_code, version);
     list_foreach_entry(p, &m->params, peers){
         tmp_len++;
     } 
-    tmp_len_n = htons(tmp_len);
-    dvan_buffer_add(b, &tmp_len_n, sizeof(tmp_len_n));
-
+    dvan_buffer_add_uint32(b, tmp_len, version); 
     list_foreach_entry(p, &m->params, peers){
-        dvan_param_to_buffer(p, b);
+        dvan_param_to_buffer(p, b, version);
     } 
-
     return 0;
 }
 

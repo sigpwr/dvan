@@ -57,6 +57,9 @@ int main(int argc, char** argv){
         return 0;
     }
 
+    msg->type = DVAN_MESSAGE_STRING;
+    msg->error_code = 15;
+
     for (i = 1; i < argc; i+=2){
         if (i+1 < argc){
             dvan_message_add_string(msg, argv[i], argv[i+1]);

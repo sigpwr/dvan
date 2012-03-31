@@ -19,12 +19,14 @@ typedef struct dvan_param_private{
 } dvan_param_t;
 
 dvan_param_t* dvan_param_create();
+dvan_param_t* dvan_param_create_key(char* key);
 
 dvan_param_t* dvan_param_create_string(char*, char*);
 dvan_param_t* dvan_param_create_integer(char*, int);
+dvan_param_t* dvan_param_from_buffer(dvan_buffer_t*, uint8_t version);
 
 void dvan_param_dump(dvan_param_t*);
-int dvan_param_to_buffer(dvan_param_t*, dvan_buffer_t*);
+int dvan_param_to_buffer(dvan_param_t*, dvan_buffer_t*, uint8_t version);
 void dvan_param_destroy(dvan_param_t*);
 
 #endif

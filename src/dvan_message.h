@@ -7,31 +7,11 @@
 #include "dvan_server_client.h"
 
 enum {
-    DVAN_MESSAGE_STRING,
-    DVAN_MESSAGE_CALL,
-    DVAN_MESSAGE_NOTIFICATION
+    DVAN_MESSAGE_STRING = 1,
+    DVAN_MESSAGE_RPC,  
+    DVAN_MESSAGE_MULTI,
+    DVAN_MESSAGE_INVALID
 };
-
-/* Protocol version 0
- *
- * 8 bits - version
- * 8 bits - message type
- * 16 bits - source node length
- * X bytes - source node
- * 16 bits - dest node length
- * X bytes - dest node
- * 16 bits - number of parameters
- * X * sizeof(param) bytes - params
- */
-
-struct dvan_message_header {
-    uint8_t version;
-    uint8_t type;
-    uint64_t length;
-    uint64_t src_app;
-    uint64_t dst_app;
-
-} __attribute__((packed));
 
 typedef struct dvan_message {
     //Set on creation
@@ -50,14 +30,12 @@ typedef struct dvan_message {
 
 dvan_message_t* dvan_message_create();
 dvan_message_t* dvan_message_from_buffer(dvan_buffer_t* b);
-dvan_message_t* dvan_message_from_string(char* s);
 
 int dvan_message_add_string(dvan_message_t*, char* k, char* v);
 int dvan_message_add_integer(dvan_message_t*, char* k, int v);
 
 int dvan_message_dump(dvan_message_t* m);
 int dvan_message_to_buffer(dvan_message_t* m, dvan_buffer_t* b);
-int dvan_message_to_string(dvan_message_t* m, char* s, uint64_t len);
 
 int dvan_message_destroy(dvan_message_t* x);
 
